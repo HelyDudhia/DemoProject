@@ -1,0 +1,46 @@
+#!groovy
+
+node('CLIENT'){
+
+	git_host="https://github.com/HelyDudhia"
+	currentBuild.result="SUCCESS"
+	
+	stage('SCM checkout'){
+		checkout scm
+	}
+	
+	stage('Build / Test'){
+		if(currentBuild.result != 'FAILURE'){
+		build_stage="Build / Test"
+		try{
+			sh """
+			mvn -f /var/lib/jenkins/workspace/Deploy-to-tomcat/pom.xml package
+			cd $(WORKSPACE)
+			docker build --t welcome-image .
+			docker push registry/welcome-image
+			"""
+		}
+		catch(exc){
+			println exc
+			currentBuild.result =  "FAILURE"
+		}
+	}else{
+		println "Build is broken"
+	}
+	
+	stage('Deploy'){
+		HOSTNAME = 52.53.179.202
+		
+		sh """
+		  cd $WORKSPACE
+		  scp -o deploy/docker-compose-demo.yml dockerhost@{HOSTNAME}:/opt/tomcat
+		  ssh -o dockerhost@{HOSTNAME} <<-'ENDSSH'
+		  docker stack rm demo
+		  docker pull registry/welcome-image
+		  docker stack deploy -c docker-compose-demo.yml deploy
+	 ENDSSH
+		"""
+	
+	}
+	
+	
