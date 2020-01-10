@@ -1,0 +1,9 @@
+#Creating docker image
+
+- hosts: all
+  become: true
+  tasks:
+  - name: building docker image
+    command: docker build -t Welcome .
+    args:
+      chdir: /opt/docker

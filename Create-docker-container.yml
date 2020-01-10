@@ -1,0 +1,8 @@
+# Craeting docker container
+---
+- hosts: all
+  become: ture
+
+  tasks:
+  - name: creating docker image using docker command
+    command: docker run -d --name Welcome -p 8080:8080 Welcome
